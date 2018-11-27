@@ -1,48 +1,48 @@
 ---
 AWSTemplateFormatVersion: "2010-09-09"
 
-Description: "Este template criara os seguintes recursos: Security Group WEB, Security Group Cluster, Roles para ECS, Target Group, Listener HTTP e HTTPS, ALB, LogGroup, Cluster ECS, Task Definition e Service."
+Description: "Template para Palestra no Cloud Girls"
 
 
 Parameters:
   VpcID:
     Type: String
-    Default: vpc-xxx
+    Default: vpc-0fb25413daf1bee95
     Description: "VPC ID"
   
   ClusterName:
     Type: String
-    Default: ecs-name-app
+    Default: ecs-cloudgirls-app
     Description: "Nome do cluster ECS"
 
   ServiceName:
     Type: String
-    Default: service-name-app
+    Default: service-cloudgirls-app
     Description: "Nome do Service ECS"
 
   TaskName:
     Type: String
-    Default: family-name-app
+    Default: family-cloudgirls-app
     Description: "Nome do Task Definition ECS"
   
   BalanceName:
     Type: String
-    Default: alb-name-app
+    Default: alb-cloudgirls-app
     Description: "Nome do Balance"
 
   TargetName:
     Type: String
-    Default: tgg-name-app
+    Default: tgg-cloudgirls-app
     Description: "Nome do TargetGroup"
 
   SecurityGroup1Name:
     Type: String
-    Default: scg-name-app
+    Default: scg-app-cloudgirls
     Description: "Nome do Security Group Web"
 
   SecurityGroup2Name:
     Type: String
-    Default: scg-template-app
+    Default: scg-cloudgirls-app
     Description: "Nome do Security Group ECS"
   
   Cname:
@@ -52,7 +52,7 @@ Parameters:
 
   RepoName:
     Type: String
-    Default: ecr-name
+    Default: ecr-cloudgirls
     Description: "Name do Registry" 
 
   CPU:
@@ -65,14 +65,10 @@ Parameters:
     Default: 2GB
     Description: "Quantidade de Gbs de memoria para o container"
   
-  ECSRoleArn:
-    Type: String
-    Default: arn:aws:iam::xxx:role/ECSRole
-    Description: "ARN Role do ECS"
-  
+ 
   Logroup:
     Type: String
-    Default: "/aws/ecs/hml"
+    Default: "/aws/ecs/app"
     Description: "Nome do LogGroup"
 
   PriorityHTTP:
@@ -104,8 +100,8 @@ Parameters:
 
   CertificateARN:
     Type: String
-    Default: arn:aws:acm:us-east-1:900266424485:certificate/xxx
-    Description: "Certificado *.amandaquinto.com.br"
+    Default: arn:aws:acm:us-east-1:495770326048:certificate/cebb9796-6cbc-4605-a227-421d465ff140
+    Description: "Certificado *.claranet.com.br"
      
 
 
@@ -140,26 +136,51 @@ Resources:
           IpProtocol: -1
           FromPort: 0
           ToPort: 65535
-  
-  ServiceLinkedRole:
-    Type: AWS::IAM::ServiceLinkedRole
+  ECSRole:
+    Type: AWS::IAM::Role
     Properties:
-      Description: "Role to enable Amazon ECS to manage your cluster."
-      AWSServiceName: ecs.amazonaws.com
-  
+      RoleName: ECSRole
+      AssumeRolePolicyDocument:
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: PolicyPortal
+          PolicyDocument:
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:DescribeLogGroups
+                  - logs:DeleteLogGroup
+                  - logs:DescribeLogStreams
+                  - logs:CreateLogGroup
+                  - logs:PutLogEvents
+                Resource: '*'
+              -
+                Effect: Allow
+                Action:
+                  - ecr:*
+                Resource: '*'
+
   TargetGroup1:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 10
-      HealthCheckPath: /healthcheck
-      HealthCheckPort: 8000
+      HealthCheckPath: /
+      HealthCheckPort: 8080
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 4
       Matcher:
         HttpCode: 200
       Name: !Ref TargetName
-      Port: 8000
+      Port: 8080
       Protocol: HTTP
       TargetType: ip
       UnhealthyThresholdCount: 4
@@ -170,11 +191,8 @@ Resources:
     Properties:
       Scheme: internet-facing
       Subnets:
-        - subnet-x
-        - subnet-x
-        - subnet-x
-        - subnet-x
-        - subnet-x
+        - subnet-049757b100be58aa7
+        - subnet-0e0d1db9d78ed19ed
       Name: !Ref BalanceName
       LoadBalancerAttributes:
       - Key: idle_timeout.timeout_seconds
@@ -255,9 +273,9 @@ Resources:
       Cpu: !Ref CPU
       Memory: !Ref Memory
       TaskRoleArn:
-        Ref: ECSRoleArn
+        Ref: ECSRole
       ExecutionRoleArn:
-        Ref: ECSRoleArn
+        Ref: ECSRole
       Family: !Ref TaskName
       NetworkMode: awsvpc
       RequiresCompatibilities:
@@ -292,21 +310,15 @@ Resources:
           ContainerName: !Ref ContainerName
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
+          AssignPublicIp: ENABLED
           SecurityGroups: 
             - !Ref SecurityGroupCluster
           Subnets:
-            - subnet-1
-            - subnet-2
-            - subnet-3
-            - subnet-4
-            - subnet-5
+            - subnet-049757b100be58aa7
+            - subnet-0e0d1db9d78ed19ed
          
     DependsOn: 
       - HTTPListenerRule
       - HTTPSListenerRule
       - LoadBalancer
-      - ServiceLinkedRole
       - SecurityGroupCluster
-
- 
