@@ -7,7 +7,7 @@ Description: "Template para Palestra no Cloud Girls"
 Parameters:
   VpcID:
     Type: String
-    Default: vpc-0fb25413daf1bee95
+    Default: vpc-********
     Description: "VPC ID"
   
   ClusterName:
@@ -100,8 +100,8 @@ Parameters:
 
   CertificateARN:
     Type: String
-    Default: arn:aws:acm:us-east-1:495770326048:certificate/cebb9796-6cbc-4605-a227-421d465ff140
-    Description: "Certificado *.claranet.com.br"
+    Default: ********
+    Description: "Certificado"
      
 
 
@@ -191,8 +191,8 @@ Resources:
     Properties:
       Scheme: internet-facing
       Subnets:
-        - subnet-049757b100be58aa7
-        - subnet-0e0d1db9d78ed19ed
+        - subnet-0
+        - subnet-0
       Name: !Ref BalanceName
       LoadBalancerAttributes:
       - Key: idle_timeout.timeout_seconds
@@ -314,8 +314,8 @@ Resources:
           SecurityGroups: 
             - !Ref SecurityGroupCluster
           Subnets:
-            - subnet-049757b100be58aa7
-            - subnet-0e0d1db9d78ed19ed
+            - subnet-
+            - subnet-
          
     DependsOn: 
       - HTTPListenerRule
