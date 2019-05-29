@@ -1,0 +1,138 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Template to create CodePipeline and CodeDeploy and integrate both"
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: ApplicationName
+    Description: "Application Name"
+
+  DeploymentGroupName:
+    Type: String
+    Default: DeploymentGroupName
+    Description: "DeploymentGroupName"
+
+  EC2TagKey:
+    Type: String
+    Default: Product
+
+  EC2TagValue:
+    Type: String
+    Default: IIS
+
+  CodeDeployServiceRole:
+    Type: String
+    Default: arn:aws:iam::XXX:role/NJ-CodeDeploy-Role
+
+  CodePipelineServiceRole:
+    Type: String
+    Default: arn:aws:iam::XXX:policy/service-role/XXX
+
+  CodePipelineName:
+    Type: String
+    Default: CodePipelineName 
+
+  SourceS3Bucket:
+    Type: String
+    Default: XXX
+
+  SourceS3ObjectKey:
+    Type: String
+    Default: XXX
+
+  ArtifactStoreS3Location:
+    Type: String
+    Default: XXX
+
+Resources: 
+
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Ref ApplicationName
+      ComputePlatform: Server
+
+  DeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref ApplicationName
+      DeploymentConfigName: CodeDeployDefault.OneAtATime
+      DeploymentGroupName: !Ref DeploymentGroupName
+      Ec2TagFilters:
+        - Key: !Ref EC2TagKey
+          Value: !Ref EC2TagValue
+          Type: KEY_AND_VALUE
+      ServiceRoleArn: !Ref CodeDeployServiceRole
+    DependsOn:
+      - CodeDeployApplication
+
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::XXX:policy/XX-CodePipeline-Full-Policy"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - codepipeline.amazonaws.com
+          Action:
+          - sts:AssumeRole 
+  
+  AppPipeline: 
+    Type: AWS::CodePipeline::Pipeline 
+    Properties:
+      Name: CodePipelineName
+      RoleArn:
+        !GetAtt PipelineRole.Arn
+      Stages: 
+        - 
+          Name: Source 
+          Actions: 
+            - 
+              Name: SourceAction
+              ActionTypeId: 
+                Category: Source 
+                Owner: AWS 
+                Version: 1 
+                Provider: S3 
+              OutputArtifacts: 
+                - 
+                  Name: SourceOutput 
+              Configuration: 
+                S3Bucket: 
+                  Ref: SourceS3Bucket 
+                S3ObjectKey: 
+                  Ref: SourceS3ObjectKey 
+              RunOrder: 1 
+        - 
+          Name: Release 
+          Actions: 
+            - 
+              Name: ReleaseAction
+              InputArtifacts: 
+                - 
+                  Name: SourceOutput 
+              ActionTypeId: 
+                Category: Deploy 
+                Owner: AWS 
+                Version: 1
+                Provider: CodeDeploy 
+              Configuration: 
+                ApplicationName: 
+                  Ref: ApplicationName
+                DeploymentGroupName: 
+                  Ref: DeploymentGroupName 
+              RunOrder: 1 
+      ArtifactStore: 
+        Type: S3 
+        Location:
+          Ref: ArtifactStoreS3Location
+    DependsOn: 
+      - CodeDeployApplication
+      - DeploymentGroup
