@@ -29,7 +29,7 @@ agent { label ''}
         }
 
         stage('Compress'){
-            steps{powershell 'Compress-Archive -Path C:\\jenkins\\workspace\\Pipeline\\API\\EJME.CrewManagement.Api\\bin\\Debug\\net461\\publish\\* -CompressionLevel Fastest -DestinationPath C:\\jenkins\\workspace\\Pipeline\\publish.zip'}       
+            steps{powershell 'Compress-Archive -Path C:\\jenkins\\workspace\\Pipeline\\API\\\\bin\\Debug\\net461\\publish\\* -CompressionLevel Fastest -DestinationPath C:\\jenkins\\workspace\\Pipeline\\publish.zip'}       
         }  
     }   
     post { 
